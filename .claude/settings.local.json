@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm --version)",
+      "Bash(npm install *)",
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Bash(npm audit *)",
+      "Bash(npm ls *)",
+      "Bash(npm view *)",
+      "Bash(timeout 12 npm run dev)",
+      "Read(//tmp/**)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:5173)",
+      "Bash(wait)",
+      "Bash(pkill -f \"vite\")",
+      "Bash(pkill -f vite)",
+      "Bash(lsof -ti:5173,5174)",
+      "Bash(xargs kill -9)",
+      "Bash(grep -oE '<text[^>]*>[^<]*</text>|>[^<]{2,}</text>' public/logo-1.svg)",
+      "Bash(supabase --version)",
+      "Bash(supabase status *)",
+      "Bash(env)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(npx eslint *)",
+      "Bash(curl -s http://localhost:5173/)",
+      "Bash(lsof -i :5173 -sTCP:LISTEN -n -P)",
+      "Bash(curl -s http://localhost:5173/src/main.tsx)",
+      "Bash(curl -s http://localhost:5173/src/App.tsx -o /dev/null -w \"%{http_code}\\\\n\")",
+      "Bash(curl -s http://localhost:5173/src/context/AuthContext.tsx -o /dev/null -w \"%{http_code}\\\\n\")",
+      "Bash(grep -rn \"supabase\\\\s*\\\\.\\\\s*from\\(\\\\|supabase$\" src --include=\"*.ts\" --include=\"*.tsx\" -A1)",
+      "Bash(grep -E '\\\\.from\\\\\\(\"|clinicDb|await supabase$|await supabase\\\\s*$')",
+      "mcp__claude-in-chrome__navigate",
+      "mcp__claude-in-chrome__tabs_context_mcp",
+      "Bash(curl -s http://localhost:5173/src/context/AuthContext.tsx -o /dev/null -w \"HTTP:%{http_code}\\\\n\")",
+      "Bash(curl -s http://localhost:5173/src/context/AuthContext.tsx)"
+    ]
+  }
+}

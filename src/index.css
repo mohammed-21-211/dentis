@@ -1,0 +1,102 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  ====================================================================
+  نظام الألوان — الوضع الفاتح فقط (Light Mode Only)
+  لا يوجد تعريف لـ .dark — هذا مقصود حسب القاعدة الصارمة رقم 4
+  ====================================================================
+*/
+@layer base {
+  :root {
+    --background: 200 30% 98%;
+    --foreground: 200 25% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 200 25% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 200 25% 12%;
+
+    /* الهوية اللونية الأساسية — أزرق مخضر طبي هادئ */
+    --primary: 178 84% 33%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 200 30% 94%;
+    --secondary-foreground: 200 25% 20%;
+
+    --muted: 200 25% 95%;
+    --muted-foreground: 200 12% 45%;
+
+    --accent: 190 70% 92%;
+    --accent-foreground: 178 84% 25%;
+
+    --destructive: 0 75% 52%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 152 60% 40%;
+    --success-foreground: 0 0% 100%;
+
+    --border: 200 20% 88%;
+    --input: 200 20% 88%;
+    --ring: 178 84% 33%;
+
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    /* ضمان اتجاه RTL على مستوى الجذر */
+    direction: rtl;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    /* تفعيل ميزات الخط العربي */
+    font-feature-settings: "kern", "liga";
+    text-rendering: optimizeLegibility;
+  }
+
+  /* محاذاة العناصر النائبة (placeholders) بشكل صحيح في RTL */
+  input::placeholder,
+  textarea::placeholder {
+    @apply text-right;
+  }
+
+  /* شريط تمرير أنيق */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-muted;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/40;
+  }
+}
+
+@layer utilities {
+  /* خلفية متدرجة ناعمة للأقسام البطولية */
+  .bg-hero-gradient {
+    background-image: radial-gradient(
+        circle at 15% 20%,
+        hsl(var(--accent) / 0.6),
+        transparent 40%
+      ),
+      radial-gradient(circle at 85% 10%, hsl(var(--primary) / 0.08), transparent 45%);
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+}
