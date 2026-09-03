@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Loader2, Users, CalendarCheck, Settings2, LayoutGrid } from "lucide-react";
+import { Loader2, Users, CalendarCheck, Settings2, LayoutGrid, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase, clinicDb } from "@/lib/supabase";
 import { ORGANIZATION_ID } from "@/lib/organization";
@@ -29,6 +29,23 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 
 type Tab = "patients" | "appointments" | "clinic" | "content";
+
+/**
+ * ترجمة أخطاء الكتابة الشائعة إلى رسالة عربية قابلة للتنفيذ. مفيدة خصوصاً
+ * لتمييز حالتَي 42501 (لهما نفس الرمز، تختلفان بالنص):
+ *   - "permission denied for table ..." → صلاحيات جداول clinic غير ممنوحة.
+ *   - "row-level security policy" → الحساب ليس عضواً في العيادة (كادر).
+ */
+function writeErrorAr(prefix: string, error: { message?: string } | null): string {
+  const msg = (error?.message ?? "").toLowerCase();
+  if (msg.includes("row-level security")) {
+    return `${prefix}: حسابك ليس مُضافاً ككادر لهذه العيادة (organization_members).`;
+  }
+  if (msg.includes("permission denied")) {
+    return `${prefix}: صلاحيات جداول clinic غير مكتملة — طبّق migration الصلاحيات 0008.`;
+  }
+  return error?.message ? `${prefix}: ${error.message}` : prefix;
+}
 
 export default function DoctorDashboard() {
   const [tab, setTab] = useState<Tab>("patients");
@@ -353,7 +370,7 @@ function ClinicTab() {
       price: parsed.data.price,
     });
     if (error) {
-      toast.error("تعذّر إضافة الخدمة");
+      toast.error(writeErrorAr("تعذّر إضافة الخدمة", error));
       return;
     }
     toast.success("تمت إضافة الخدمة");
@@ -362,12 +379,39 @@ function ClinicTab() {
   }
 
   async function toggleService(s: Service) {
-    await clinicDb.from("services").update({ is_active: !s.is_active }).eq("id", s.id);
+    const { error } = await clinicDb
+      .from("services")
+      .update({ is_active: !s.is_active })
+      .eq("id", s.id);
+    if (error) {
+      toast.error(writeErrorAr("تعذّر تحديث الخدمة", error));
+      return;
+    }
+    load();
+  }
+
+  async function deleteService(s: Service) {
+    if (!window.confirm(`حذف خدمة "${s.name}" نهائياً؟`)) return;
+    const { error } = await clinicDb.from("services").delete().eq("id", s.id);
+    if (error) {
+      // 23503 = مفتاح خارجي: الخدمة مرتبطة بمواعيد (appointments.service_id ON DELETE RESTRICT)
+      if (error.code === "23503") {
+        toast.error("لا يمكن حذف خدمة مرتبطة بمواعيد — عطّلها بدلاً من الحذف.");
+      } else {
+        toast.error(writeErrorAr("تعذّر حذف الخدمة", error));
+      }
+      return;
+    }
+    toast.success("تم حذف الخدمة");
     load();
   }
 
   async function saveHour(h: ClinicHour, patch: Partial<ClinicHour>) {
-    await clinicDb.from("clinic_hours").update(patch).eq("id", h.id);
+    const { error } = await clinicDb.from("clinic_hours").update(patch).eq("id", h.id);
+    if (error) {
+      toast.error(writeErrorAr("تعذّر حفظ ساعات العمل", error));
+      return;
+    }
     load();
   }
 
@@ -424,13 +468,24 @@ function ClinicTab() {
                     {s.duration} دقيقة — {formatPrice(s.price)}
                   </p>
                 </div>
-                <Button
-                  size="sm"
-                  variant={s.is_active ? "outline" : "secondary"}
-                  onClick={() => toggleService(s)}
-                >
-                  {s.is_active ? "مفعّلة" : "معطّلة"}
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button
+                    size="sm"
+                    variant={s.is_active ? "outline" : "secondary"}
+                    onClick={() => toggleService(s)}
+                  >
+                    {s.is_active ? "مفعّلة" : "معطّلة"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => deleteService(s)}
+                    className="text-destructive hover:text-destructive"
+                    aria-label={`حذف ${s.name}`}
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
