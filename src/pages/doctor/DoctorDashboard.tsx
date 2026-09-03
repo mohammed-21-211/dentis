@@ -47,6 +47,10 @@ function writeErrorAr(prefix: string, error: { message?: string } | null): strin
   return error?.message ? `${prefix}: ${error.message}` : prefix;
 }
 
+/** ساعات العمل الافتراضية عند تفعيل يوم جديد (٩ صباحاً – ٥ مساءً). */
+const DEFAULT_OPEN = "09:00";
+const DEFAULT_CLOSE = "17:00";
+
 export default function DoctorDashboard() {
   const [tab, setTab] = useState<Tab>("patients");
 
@@ -406,12 +410,55 @@ function ClinicTab() {
     load();
   }
 
-  async function saveHour(h: ClinicHour, patch: Partial<ClinicHour>) {
-    const { error } = await clinicDb.from("clinic_hours").update(patch).eq("id", h.id);
+  // ساعات العمل مفهرسة حسب اليوم (0=الأحد .. 6=السبت). يوم بلا صفّ = مغلق
+  // في محرّك المواعيد، لذا نعرض الأيام السبعة دائماً وننشئ الصفّ عند أول تعديل.
+  const hoursByDay = new Map(hours.map((h) => [h.day_of_week, h]));
+
+  type HourPatch = Partial<Pick<ClinicHour, "start_time" | "end_time" | "is_closed">>;
+
+  /** إنشاء صفّ اليوم إن لم يوجد، أو تعديله — عبر upsert على (organization_id, day_of_week). */
+  async function upsertHour(day: number, patch: HourPatch) {
+    const existing = hoursByDay.get(day);
+    const base = existing
+      ? {
+          start_time: trimSeconds(existing.start_time),
+          end_time: trimSeconds(existing.end_time),
+          is_closed: existing.is_closed,
+        }
+      : { start_time: DEFAULT_OPEN, end_time: DEFAULT_CLOSE, is_closed: false };
+    const { error } = await clinicDb
+      .from("clinic_hours")
+      .upsert(
+        { organization_id: ORGANIZATION_ID, day_of_week: day, ...base, ...patch },
+        { onConflict: "organization_id,day_of_week" },
+      );
     if (error) {
       toast.error(writeErrorAr("تعذّر حفظ ساعات العمل", error));
       return;
     }
+    load();
+  }
+
+  /** تهيئة كل الأيام غير المحدّدة كأيام عمل افتراضية (٩ص–٥م) بضغطة واحدة. */
+  async function seedWeek() {
+    const rows = WEEKDAYS_AR.map((_, day) => day)
+      .filter((day) => !hoursByDay.has(day))
+      .map((day) => ({
+        organization_id: ORGANIZATION_ID,
+        day_of_week: day,
+        start_time: DEFAULT_OPEN,
+        end_time: DEFAULT_CLOSE,
+        is_closed: false,
+      }));
+    if (rows.length === 0) return;
+    const { error } = await clinicDb
+      .from("clinic_hours")
+      .upsert(rows, { onConflict: "organization_id,day_of_week" });
+    if (error) {
+      toast.error(writeErrorAr("تعذّر تهيئة أيام العمل", error));
+      return;
+    }
+    toast.success("تم تفعيل أيام الأسبوع");
     load();
   }
 
@@ -494,44 +541,56 @@ function ClinicTab() {
 
       {/* ساعات العمل */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
           <CardTitle>ساعات العمل الأسبوعية</CardTitle>
+          {hoursByDay.size < WEEKDAYS_AR.length && (
+            <Button size="sm" variant="outline" onClick={seedWeek}>
+              فتح كل الأيام
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="space-y-2">
-          {hours.map((h) => (
-            <div
-              key={h.id}
-              className="flex items-center gap-2 rounded-lg border border-border p-2 text-sm"
-            >
-              <span className="w-16 font-medium">{WEEKDAYS_AR[h.day_of_week]}</span>
-              {h.is_closed ? (
-                <span className="flex-1 text-center text-destructive">مغلق</span>
-              ) : (
-                <div className="flex flex-1 items-center justify-center gap-2">
-                  <Input
-                    type="time"
-                    value={trimSeconds(h.start_time)}
-                    onChange={(e) => saveHour(h, { start_time: e.target.value })}
-                    className="h-8 w-28"
-                  />
-                  <span className="text-muted-foreground">إلى</span>
-                  <Input
-                    type="time"
-                    value={trimSeconds(h.end_time)}
-                    onChange={(e) => saveHour(h, { end_time: e.target.value })}
-                    className="h-8 w-28"
-                  />
-                </div>
-              )}
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => saveHour(h, { is_closed: !h.is_closed })}
+          {WEEKDAYS_AR.map((label, day) => {
+            const h = hoursByDay.get(day);
+            const notSet = !h; // بلا صفّ = مغلق في محرّك المواعيد
+            const isClosed = h?.is_closed ?? true;
+            return (
+              <div
+                key={day}
+                className="flex items-center gap-2 rounded-lg border border-border p-2 text-sm"
               >
-                {h.is_closed ? "فتح" : "إغلاق"}
-              </Button>
-            </div>
-          ))}
+                <span className="w-16 font-medium">{label}</span>
+                {isClosed ? (
+                  <span className="flex-1 text-center text-destructive">
+                    {notSet ? "غير محدّدة" : "مغلق"}
+                  </span>
+                ) : (
+                  <div className="flex flex-1 items-center justify-center gap-2">
+                    <Input
+                      type="time"
+                      value={trimSeconds(h!.start_time)}
+                      onChange={(e) => upsertHour(day, { start_time: e.target.value })}
+                      className="h-8 w-28"
+                    />
+                    <span className="text-muted-foreground">إلى</span>
+                    <Input
+                      type="time"
+                      value={trimSeconds(h!.end_time)}
+                      onChange={(e) => upsertHour(day, { end_time: e.target.value })}
+                      className="h-8 w-28"
+                    />
+                  </div>
+                )}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => upsertHour(day, { is_closed: !isClosed })}
+                >
+                  {isClosed ? "فتح" : "إغلاق"}
+                </Button>
+              </div>
+            );
+          })}
         </CardContent>
       </Card>
     </div>
