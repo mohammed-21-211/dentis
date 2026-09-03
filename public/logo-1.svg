@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="80 38 588 126" fill="none">
   <g transform="translate(548,44) scale(1.12)"><circle cx="50" cy="50" r="47" stroke="#D5EFED" stroke-width="2"></circle><circle cx="50" cy="50" r="47" fill="none" stroke="#0D9B96" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="44 254" transform="rotate(-52 50 50)"></circle><g transform="translate(8.5,8.5) scale(0.83)"><path d="M26 47 C24 39 24 30 31 26 C35 24 39 26 41 31 C44 35 47 35 50 35 C53 35 56 35 59 31 C61 26 65 24 69 26 C76 30 76 39 74 47 C72 56 71 66 67 76 C65 82 62 88 58 87 C54 86 53 75 51 67 C50.5 64 49.5 64 49 67 C47 75 46 86 42 87 C38 88 35 82 33 76 C29 66 28 56 26 47 Z" stroke="#0A6E6A" stroke-width="3" stroke-linejoin="round"></path><path d="M34 33 C40 29 46 31 50 35 C54 31 60 29 66 33" stroke="#0D9B96" stroke-width="2.2" stroke-linecap="round"></path></g></g>
-  <text x="520" y="98" text-anchor="start" direction="rtl" style="direction:rtl" font-family="El Messiri, sans-serif" font-weight="700" font-size="46" letter-spacing="-0.5" fill="#0B3B39">عيادة الطبيب مشهور</text>
+  <text x="520" y="98" text-anchor="start" direction="rtl" style="direction:rtl" font-family="El Messiri, sans-serif" font-weight="700" font-size="46" letter-spacing="-0.5" fill="#0B3B39">عيادة طبيب الأسنان</text>
   <line x1="486" y1="123" x2="520" y2="123" stroke="#0D9B96" stroke-width="1.6" stroke-linecap="round"></line>
-  <text x="476" y="128" text-anchor="end" font-family="Montserrat, sans-serif" font-weight="600" font-size="12" letter-spacing="3" fill="#7A8898">DR. MASHHOOR DENTAL CLINIC</text>
+  <text x="476" y="128" text-anchor="end" font-family="Montserrat, sans-serif" font-weight="600" font-size="12" letter-spacing="3" fill="#7A8898">DENTIST CLINIC</text>
 </svg>

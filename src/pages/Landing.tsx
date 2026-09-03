@@ -269,7 +269,7 @@ export default function LandingPage() {
 
       <footer className="border-t border-border bg-card">
         <div className="container flex flex-col items-center justify-between gap-4 py-8 text-sm text-muted-foreground sm:flex-row">
-          <p>© {new Date().getFullYear()} عيادة الطبيب مشهور. جميع الحقوق محفوظة.</p>
+          <p>© {new Date().getFullYear()} عيادة طبيب الأسنان. جميع الحقوق محفوظة.</p>
           <p>صُمّم بعناية لراحة مرضانا.</p>
         </div>
       </footer>

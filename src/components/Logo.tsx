@@ -34,7 +34,7 @@ export function Logo({ size = "md", className }: LogoProps) {
             isLg ? "text-xl sm:text-3xl" : "text-sm sm:text-lg md:text-xl",
           )}
         >
-          عيادة الطبيب مشهور
+          عيادة طبيب الأسنان
         </span>
         <span
           dir="ltr"
@@ -43,7 +43,7 @@ export function Logo({ size = "md", className }: LogoProps) {
             isLg ? "text-[11px]" : "text-[9px] md:text-[10px]",
           )}
         >
-          DR. MASHHOOR DENTAL CLINIC
+          DENTIST CLINIC
         </span>
       </div>
     </div>
