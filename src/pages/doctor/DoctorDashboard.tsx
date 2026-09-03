@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Loader2, Users, CalendarCheck, Settings2, LayoutGrid, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { supabase, clinicDb } from "@/lib/supabase";
+import { clinicDb } from "@/lib/supabase";
 import { ORGANIZATION_ID } from "@/lib/organization";
 import {
   appointmentStatusAr,
@@ -130,28 +130,13 @@ function PatientsTab() {
 
   useEffect(() => {
     (async () => {
-      const { data: apptRows } = await clinicDb
-        .from("appointments")
-        .select("patient_id")
-        .eq("organization_id", ORGANIZATION_ID);
-
-      const patientIds = Array.from(
-        new Set(((apptRows as { patient_id: string }[]) ?? []).map((r) => r.patient_id)),
-      );
-
-      if (patientIds.length === 0) {
-        setPatients([]);
-        setLoading(false);
-        return;
+      // مرضى العيادة عبر دالة SECURITY DEFINER (تتجاوز RLS profiles بأمان،
+      // مقيّدة بعضوية المتصل) — تُرجِع الاسم والهاتف مباشرةً.
+      const { data, error } = await clinicDb.rpc("org_patients");
+      if (error) {
+        toast.error(writeErrorAr("تعذّر تحميل سجل المرضى", error));
       }
-
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("*")
-        .in("id", patientIds)
-        .order("created_at", { ascending: false });
-
-      setPatients((profiles as Profile[]) ?? []);
+      setPatients((data as Profile[]) ?? []);
       setLoading(false);
     })();
   }, []);
@@ -234,18 +219,16 @@ function AppointmentsTab() {
       .order("appointment_date", { ascending: true });
 
     const rows = (data as Omit<AppointmentWithRelations, "patient">[]) ?? [];
-    const patientIds = Array.from(new Set(rows.map((r) => r.patient_id)));
 
-    let profileMap = new Map<string, Pick<Profile, "id" | "full_name" | "phone">>();
-    if (patientIds.length > 0) {
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, full_name, phone")
-        .in("id", patientIds);
-      profileMap = new Map(
-        ((profiles as Pick<Profile, "id" | "full_name" | "phone">[]) ?? []).map((p) => [p.id, p]),
-      );
-    }
+    // أسماء/هواتف المرضى عبر دالة العيادة (profiles محميّ بـ RLS لا يسمح
+    // للطبيب بقراءته مباشرةً، ولا يملك عمود phone أصلاً).
+    const { data: patientsData } = await clinicDb.rpc("org_patients");
+    const profileMap = new Map(
+      ((patientsData as Pick<Profile, "id" | "full_name" | "phone">[]) ?? []).map((p) => [
+        p.id,
+        p,
+      ]),
+    );
 
     setAppointments(
       rows.map((r) => ({ ...r, patient: profileMap.get(r.patient_id) ?? null })),
